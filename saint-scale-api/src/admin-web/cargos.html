@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Cargos - SaintScale Admin</title>
+	<link rel="stylesheet" href="/admin/css/style.css">
+</head>
+<body>
+	<header class="header">
+		<div class="header-content">
+			<h1>Cargos</h1>
+			<div class="nav-actions">
+				<button class="btn btn-secondary btn-sm" onclick="location.href='/admin/dashboard.html'">Voltar</button>
+				<button class="btn btn-primary btn-sm" onclick="openCreateModal()">Novo Cargo</button>
+				<button class="btn btn-secondary btn-sm" onclick="window.saintScaleAdmin.logout()">Sair</button>
+			</div>
+		</div>
+	</header>
+
+	<div class="container">
+		<div id="alert-container"></div>
+
+		<div class="card">
+			<div class="card-title">Lista de Cargos</div>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Nome</th>
+						<th>Permissões</th>
+						<th>Ações</th>
+					</tr>
+				</thead>
+				<tbody id="cargos-table-body">
+					<tr><td colspan="3" class="empty-state">Carregando...</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<div id="cargo-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+		<div style="background: var(--c6); border-radius: 8px; padding: 24px; max-width: 500px; margin: 60px auto; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
+			<h3 id="modal-title" style="margin-top: 0;">Novo Cargo</h3>
+			<div id="modal-alert"></div>
+			<form id="cargo-form">
+				<input type="hidden" id="cargo-id">
+				<div class="form-group">
+					<label>Nome</label>
+					<input type="text" id="cargo-name" required>
+				</div>
+				<div class="form-group">
+					<label>Permissões (JSON)</label>
+					<textarea id="cargo-permissoes" rows="4" placeholder='{"ministérios": ["criar", "editar", "excluir"], "membros": ["visualizar"]}'></textarea>
+					<small style="color: var(--c5);">Deixe vazio para permissões padrão.</small>
+				</div>
+				<div style="display: flex; gap: 8px; margin-top: 16px;">
+					<button type="button" class="btn btn-secondary" onclick="closeCargoModal()">Cancelar</button>
+					<button type="submit" class="btn btn-primary">Salvar</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<script src="/admin/js/app.js"></script>
+	<script>
+		let cargos = [];
+		let editId = null;
+
+		async function loadCargos() {
+			try {
+				cargos = await window.saintScaleAdmin.api.listarCargos();
+				renderCargos();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("alert-container", err.message, "error");
+				document.getElementById("cargos-table-body").innerHTML = '<tr><td colspan="3" class="empty-state">Erro ao carregar cargos</td></tr>';
+			}
+		}
+
+		function renderCargos() {
+			const tbody = document.getElementById("cargos-table-body");
+			if (cargos.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Nenhum cargo cadastrado</td></tr>';
+				return;
+			}
+			tbody.innerHTML = cargos.map(c => `
+				<tr>
+					<td>${window.saintScaleAdmin.escapeHtml(c.nome)}</td>
+					<td><code style="font-size: 12px; max-width: 300px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${window.saintScaleAdmin.escapeHtml(JSON.stringify(c.permissoes || {}))}</code></td>
+					<td>
+						<div class="table-actions">
+							<button class="btn btn-outline btn-sm" onclick="openEditModal(${c.id})">Editar</button>
+							<button class="btn btn-danger btn-sm" onclick="deleteCargo(${c.id})">Excluir</button>
+						</div>
+					</td>
+				</tr>
+			`).join("");
+		}
+
+		function openCreateModal() {
+			editId = null;
+			document.getElementById("modal-title").textContent = "Novo Cargo";
+			document.getElementById("cargo-form").reset();
+			document.getElementById("cargo-id").value = "";
+			document.getElementById("cargo-modal").style.display = "block";
+			window.saintScaleAdmin.clearAlert("modal-alert");
+		}
+
+		function openEditModal(id) {
+			const c = cargos.find(x => x.id === id);
+			if (!c) return;
+			editId = id;
+			document.getElementById("modal-title").textContent = "Editar Cargo";
+			document.getElementById("cargo-id").value = c.id;
+			document.getElementById("cargo-name").value = c.nome;
+			document.getElementById("cargo-permissoes").value = c.permissoes ? JSON.stringify(c.permissoes, null, 2) : "";
+			document.getElementById("cargo-modal").style.display = "block";
+			window.saintScaleAdmin.clearAlert("modal-alert");
+		}
+
+		function closeCargoModal() {
+			document.getElementById("cargo-modal").style.display = "none";
+		}
+
+		async function saveCargo(e) {
+			e.preventDefault();
+			const data = {
+				nome: document.getElementById("cargo-name").value,
+			};
+			const permissoesStr = document.getElementById("cargo-permissoes").value.trim();
+			if (permissoesStr) {
+				try {
+					data.permissoes = JSON.parse(permissoesStr);
+				} catch (err) {
+					window.saintScaleAdmin.showAlert("modal-alert", "Permissões inválidas (JSON malformado)", "error");
+					return;
+				}
+			}
+
+			try {
+				if (editId) {
+					await window.saintScaleAdmin.api.atualizarCargo(editId, data);
+				} else {
+					await window.saintScaleAdmin.api.criarCargo(data);
+				}
+				closeCargoModal();
+				loadCargos();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("modal-alert", err.message, "error");
+			}
+		}
+
+		async function deleteCargo(id) {
+			if (!confirm("Tem certeza que deseja excluir este cargo?")) return;
+			try {
+				await window.saintScaleAdmin.api.excluirCargo(id);
+				loadCargos();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("alert-container", err.message, "error");
+			}
+		}
+
+		document.getElementById("cargo-form").addEventListener("submit", saveCargo);
+		window.onclick = (e) => {
+			if (e.target === document.getElementById("cargo-modal")) closeCargoModal();
+		};
+
+		if (!window.saintScaleAdmin.isAuthenticated()) {
+			window.location.href = "/admin/index.html";
+		} else {
+			loadCargos();
+		}
+	</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+# ── Segredos e ambiente ───────────────────────────────────────
+.env
+.env*.local
+
+# ── Dependências ──────────────────────────────────────────────
+node_modules/
+
+# ── Build artifacts ───────────────────────────────────────────
+dist/
+web-build/
+.expo/
+
+# ── Gerado automaticamente pelo Expo ──────────────────────────
+expo-env.d.ts
+*.tsbuildinfo
+
+# ── Pastas nativas geradas (não usadas no projeto web) ────────
+/ios
+/android
+.kotlin/
+
+# ── Logs e debug ──────────────────────────────────────────────
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# ── Lock files alternativos (projeto usa npm) ─────────────────
+yarn.lock
+
+# ── Sistema operacional ───────────────────────────────────────
+.DS_Store
+*.pem
+Thumbs.db

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Ministérios - SaintScale Admin</title>
+	<link rel="stylesheet" href="/admin/css/style.css">
+</head>
+<body>
+	<header class="header">
+		<div class="header-content">
+			<h1>Ministérios</h1>
+			<div class="nav-actions">
+				<button class="btn btn-secondary btn-sm" onclick="location.href='/admin/dashboard.html'">Voltar</button>
+				<button class="btn btn-primary btn-sm" onclick="openCreateModal()">Novo Ministério</button>
+				<button class="btn btn-secondary btn-sm" onclick="window.saintScaleAdmin.logout()">Sair</button>
+			</div>
+		</div>
+	</header>
+
+	<div class="container">
+		<div id="alert-container"></div>
+
+		<div class="card">
+			<div class="card-title">Lista de Ministérios</div>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Nome</th>
+						<th>Ações</th>
+					</tr>
+				</thead>
+				<tbody id="ministerios-table-body">
+					<tr><td colspan="2" class="empty-state">Carregando...</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<div id="ministerio-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+		<div style="background: var(--c6); border-radius: 8px; padding: 24px; max-width: 500px; margin: 60px auto; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
+			<h3 id="modal-title" style="margin-top: 0;">Novo Ministério</h3>
+			<div id="modal-alert"></div>
+			<form id="ministerio-form">
+				<input type="hidden" id="ministerio-id">
+				<div class="form-group">
+					<label>Nome</label>
+					<input type="text" id="ministerio-name" required>
+				</div>
+				<div style="display: flex; gap: 8px; margin-top: 16px;">
+					<button type="button" class="btn btn-secondary" onclick="closeMinisterioModal()">Cancelar</button>
+					<button type="submit" class="btn btn-primary">Salvar</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div id="ministerio-membros-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001;">
+		<div style="background: var(--c6); border-radius: 8px; padding: 24px; max-width: 600px; margin: 60px auto; box-shadow: 0 4px 6px rgba(0,0,0,0.15); max-height: 80vh; overflow-y: auto;">
+			<h3 id="ministerio-membros-modal-title" style="margin-top: 0;">Membros do Ministério</h3>
+			<div id="ministerio-membros-modal-alert"></div>
+			<div style="margin: 16px 0;">
+				<label style="display:block; margin-bottom: 6px; font-weight: 600;">Adicionar membro</label>
+				<select id="ministerio-membro-select"></select>
+				<button class="btn btn-primary btn-sm" style="margin-left: 8px;" onclick="addMembroAMinisterio()">Adicionar</button>
+			</div>
+			<div style="display: flex; gap: 8px; align-items: center; margin: 12px 0;">
+				<span id="ministerio-membros-loading" style="display:none; font-size: 0.9rem; color: var(--c5);">Carregando...</span>
+				<span id="ministerio-membros-empty" style="display:none; font-size: 0.9rem; color: var(--c5);">Nenhum membro associado</span>
+			</div>
+			<table class="table" id="ministerio-membros-table" style="display:none; width:100%; margin-top: 8px;">
+				<thead>
+					<tr><th>Nome</th><th>E-mail</th><th style="width:110px;">Ação</th></tr>
+				</thead>
+				<tbody id="ministerio-membros-table-body"></tbody>
+			</table>
+			<div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+				<button class="btn btn-secondary" onclick="closeMinisterioMembrosModal()">Fechar</button>
+			</div>
+		</div>
+	</div>
+
+	<script src="/admin/js/app.js"></script>
+	<script>
+		let ministerios = [];
+		let editId = null;
+		let currentMinisterioId = null;
+
+		async function loadMinisterios() {
+			try {
+				document.getElementById("ministerios-table-body").innerHTML = '<tr><td colspan="2" class="empty-state">Carregando...</td></tr>';
+				ministerios = await window.saintScaleAdmin.api.listarMinisterios();
+				renderMinisterios();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("alert-container", err.message, "error");
+				document.getElementById("ministerios-table-body").innerHTML = '<tr><td colspan="2" class="empty-state">Erro ao carregar ministérios</td></tr>';
+			}
+		}
+
+		function renderMinisterios() {
+			const tbody = document.getElementById("ministerios-table-body");
+			if (ministerios.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="2" class="empty-state">Nenhum ministério cadastrado</td></tr>';
+				return;
+			}
+			tbody.innerHTML = ministerios.map(m => `
+				<tr>
+					<td>${window.saintScaleAdmin.escapeHtml(m.nome)}</td>
+					<td>
+						<div class="table-actions">
+							<button class="btn btn-outline btn-sm" onclick="openEditModal(${m.id})">Editar</button>
+							<button class="btn btn-danger btn-sm" onclick="deleteMinisterio(${m.id})">Excluir</button>
+							<button class="btn btn-outline btn-sm" onclick="openMembrosModal(${m.id})">Membros</button>
+						</div>
+					</td>
+				</tr>
+			`).join("");
+		}
+
+		function openCreateModal() {
+			editId = null;
+			document.getElementById("modal-title").textContent = "Novo Ministério";
+			document.getElementById("ministerio-form").reset();
+			document.getElementById("ministerio-id").value = "";
+			document.getElementById("ministerio-modal").style.display = "block";
+			window.saintScaleAdmin.clearAlert("modal-alert");
+		}
+
+		function openEditModal(id) {
+			const m = ministerios.find(x => x.id === id);
+			if (!m) return;
+			editId = id;
+			document.getElementById("modal-title").textContent = "Editar Ministério";
+			document.getElementById("ministerio-id").value = m.id;
+			document.getElementById("ministerio-name").value = m.nome;
+			document.getElementById("ministerio-modal").style.display = "block";
+			window.saintScaleAdmin.clearAlert("modal-alert");
+		}
+
+		function closeMinisterioModal() {
+			document.getElementById("ministerio-modal").style.display = "none";
+		}
+
+		async function saveMinisterio(e) {
+			e.preventDefault();
+			const data = {
+				nome: document.getElementById("ministerio-name").value,
+			};
+			try {
+				if (editId) {
+					await window.saintScaleAdmin.api.atualizarMinisterio(editId, data);
+				} else {
+					await window.saintScaleAdmin.api.criarMinisterio(data);
+				}
+				closeMinisterioModal();
+				await loadMinisterios();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("modal-alert", err.message, "error");
+			}
+		}
+
+		async function deleteMinisterio(id) {
+			if (!confirm("Tem certeza que deseja excluir este ministério?")) return;
+			try {
+				await window.saintScaleAdmin.api.excluirMinisterio(id);
+				await loadMinisterios();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("alert-container", err.message, "error");
+			}
+		}
+
+		async function openMembrosModal(idMinisterio) {
+			const m = ministerios.find(x => x.id === idMinisterio);
+			const nomeMinisterio = m ? m.nome : "";
+			currentMinisterioId = idMinisterio;
+			document.getElementById("ministerio-membros-modal-title").textContent = `Membros do Ministério: ${nomeMinisterio}`;
+			document.getElementById("ministerio-membros-modal").style.display = "block";
+			window.saintScaleAdmin.clearAlert("ministerio-membros-modal-alert");
+			await loadMembrosMinisterio();
+			await loadAvailableMembros();
+		}
+
+		function closeMinisterioMembrosModal() {
+			document.getElementById("ministerio-membros-modal").style.display = "none";
+			currentMinisterioId = null;
+		}
+
+		async function loadMembrosMinisterio() {
+			if (!currentMinisterioId) return;
+			try {
+				document.getElementById("ministerio-membros-loading").style.display = "block";
+				document.getElementById("ministerio-membros-table").style.display = "none";
+				document.getElementById("ministerio-membros-empty").style.display = "none";
+				document.getElementById("ministerio-membros-table-body").innerHTML = "";
+
+				const membros = await window.saintScaleAdmin.api.listarMembrosMinisterio(currentMinisterioId);
+				renderMembrosMinisterio(membros);
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("ministerio-membros-modal-alert", err.message, "error");
+				document.getElementById("ministerio-membros-loading").style.display = "none";
+				document.getElementById("ministerio-membros-empty").style.display = "block";
+				document.getElementById("ministerio-membros-empty").textContent = "Erro ao carregar membros";
+			}
+		}
+
+		function renderMembrosMinisterio(membros) {
+			document.getElementById("ministerio-membros-loading").style.display = "none";
+			const tbody = document.getElementById("ministerio-membros-table-body");
+			if (membros.length === 0) {
+				document.getElementById("ministerio-membros-table").style.display = "none";
+				document.getElementById("ministerio-membros-empty").style.display = "block";
+				return;
+			}
+			document.getElementById("ministerio-membros-table").style.display = "table";
+			document.getElementById("ministerio-membros-empty").style.display = "none";
+			tbody.innerHTML = membros.map(m => `
+				<tr>
+					<td>${window.saintScaleAdmin.escapeHtml(m.nome)}</td>
+					<td>${window.saintScaleAdmin.escapeHtml(m.email)}</td>
+					<td>
+						<button class="btn btn-danger btn-sm" onclick="removeMembroDoMinisterio(${m.id})">Remover</button>
+					</td>
+				</tr>
+			`).join("");
+		}
+
+		async function loadAvailableMembros() {
+			try {
+				const todosMembros = await window.saintScaleAdmin.api.listarMembros();
+				const select = document.getElementById("ministerio-membro-select");
+				select.innerHTML = '<option value="">Selecione um membro</option>';
+				todosMembros.forEach(m => {
+					const option = document.createElement("option");
+					option.value = m.id;
+					option.textContent = `${m.nome} (${m.email})`;
+					select.appendChild(option);
+				});
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("ministerio-membros-modal-alert", err.message, "error");
+			}
+		}
+
+		async function addMembroAMinisterio() {
+			if (!currentMinisterioId) return;
+			const idMembro = document.getElementById("ministerio-membro-select").value;
+			if (!idMembro) {
+				window.saintScaleAdmin.showAlert("ministerio-membros-modal-alert", "Selecione um membro", "error");
+				return;
+			}
+			const btn = document.querySelector("#ministerio-membros-modal button.btn-primary");
+			const originalText = btn.textContent;
+			btn.textContent = "Adicionando...";
+			btn.disabled = true;
+			try {
+				await window.saintScaleAdmin.api.adicionarMembroMinisterio(currentMinisterioId, Number(idMembro));
+				window.saintScaleAdmin.showAlert("ministerio-membros-modal-alert", "Membro adicionado ao ministério", "success");
+				document.getElementById("ministerio-membro-select").value = "";
+				await loadMembrosMinisterio();
+				await loadAvailableMembros();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("ministerio-membros-modal-alert", err.message, "error");
+			} finally {
+				btn.textContent = originalText;
+				btn.disabled = false;
+			}
+		}
+
+		async function removeMembroDoMinisterio(idMembro) {
+			if (!currentMinisterioId) return;
+			if (!confirm("Tem certeza que deseja remover este membro do ministério?")) return;
+			try {
+				await window.saintScaleAdmin.api.removerMembroMinisterio(currentMinisterioId, idMembro);
+				window.saintScaleAdmin.showAlert("ministerio-membros-modal-alert", "Membro removido do ministério", "success");
+				await loadMembrosMinisterio();
+				await loadAvailableMembros();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("ministerio-membros-modal-alert", err.message, "error");
+			}
+		}
+
+		document.getElementById("ministerio-form").addEventListener("submit", saveMinisterio);
+		window.onclick = (e) => {
+			if (e.target === document.getElementById("ministerio-modal")) closeMinisterioModal();
+			if (e.target === document.getElementById("ministerio-membros-modal")) closeMinisterioMembrosModal();
+		};
+
+		if (!window.saintScaleAdmin.isAuthenticated()) {
+			window.location.href = "/admin/index.html";
+		} else {
+			loadMinisterios();
+		}
+	</script>
+</body>
+</html>

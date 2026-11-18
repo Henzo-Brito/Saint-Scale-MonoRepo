@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: saintscale-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: saintscale_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: saintscale-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/saintscale_dev
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET:-Henzo_Esteve_Aqui}
+      NODE_ENV: production
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/admin/login').then(() => process.exit(0)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  postgres_data:

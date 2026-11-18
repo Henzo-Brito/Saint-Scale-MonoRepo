@@ -1,0 +1,40 @@
+# ── Segredos e ambiente ───────────────────────────────────────
+.env
+.env.docker
+*.env.local
+
+# ── Dados do banco local (PostgreSQL legado / MySQL local) ────
+.docker-data/
+mysql84data/
+mysql84.ini
+
+# ── Backups e dumps locais ────────────────────────────────────
+backups/
+backup_*.sql
+fix_enum.sql
+check_locais2.mjs
+
+# ── Dependências ──────────────────────────────────────────────
+node_modules/
+
+# ── Build artifacts ───────────────────────────────────────────
+dist/
+dist_temp/
+.expo/
+
+# ── Rascunhos e notas internas ────────────────────────────────
+oi.md
+rodar.md
+RELATORIO_SIMPLIFICADO.md
+SAINTSCALE_IMPLEMENTATION_STATUS.md
+
+# ── Editor / IDE ──────────────────────────────────────────────
+.kilo/
+.vscode/*
+!.vscode/launch.json
+!.vscode/*.code-snippets
+.idea/
+
+# ── Sistema operacional ───────────────────────────────────────
+.DS_Store
+Thumbs.db

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Dashboard - SaintScale Admin</title>
+	<link rel="stylesheet" href="/admin/css/style.css">
+	<style>
+		.dash-tabs {
+			display: flex;
+			gap: 4px;
+			border-bottom: 2px solid var(--c8);
+			margin-bottom: 24px;
+		}
+		.dash-tab {
+			padding: 10px 22px;
+			font-size: 14px;
+			font-weight: 600;
+			color: var(--c5);
+			background: none;
+			border: none;
+			border-bottom: 3px solid transparent;
+			margin-bottom: -2px;
+			cursor: pointer;
+			transition: color 0.15s, border-color 0.15s;
+		}
+		.dash-tab:hover { color: var(--c1); }
+		.dash-tab.active {
+			color: var(--c1);
+			border-bottom-color: var(--c1);
+		}
+		.dash-panel { display: none; }
+		.dash-panel.active { display: block; }
+
+		/* Avisos: grid de cards */
+		.avisos-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+			gap: 16px;
+		}
+		.aviso-card {
+			background: var(--c6);
+			border-radius: 8px;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+			padding: 16px;
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+		.aviso-card-title {
+			font-size: 15px;
+			font-weight: 700;
+			color: var(--c4);
+		}
+		.aviso-card-meta {
+			font-size: 12px;
+			color: var(--c5);
+		}
+		.aviso-card-desc {
+			font-size: 13px;
+			color: var(--c4);
+			flex: 1;
+		}
+		.aviso-card-funcoes {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 4px;
+		}
+		.aviso-card-funcao-tag {
+			background: #f3e8ff;
+			color: #6b21a8;
+			font-size: 11px;
+			font-weight: 600;
+			padding: 2px 7px;
+			border-radius: 20px;
+		}
+		.aviso-card-actions {
+			display: flex;
+			gap: 6px;
+			margin-top: 6px;
+		}
+		.avisos-toolbar {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+		}
+		.avisos-empty {
+			text-align: center;
+			padding: 48px 20px;
+			color: var(--c5);
+		}
+		.avisos-empty-icon {
+			font-size: 40px;
+			margin-bottom: 12px;
+		}
+	</style>
+</head>
+<body>
+	<header class="header">
+		<div class="header-content">
+			<h1>Painel Administrativo</h1>
+			<div class="nav-actions">
+				<span class="user-info">
+					<span id="user-name" class="user-badge">—</span>
+				</span>
+				<button class="btn btn-secondary btn-sm" onclick="window.saintScaleAdmin.logout()">Sair</button>
+			</div>
+		</div>
+	</header>
+
+	<div class="container">
+		<div id="alert-container"></div>
+
+		<!-- Abas -->
+		<div class="dash-tabs">
+			<button class="dash-tab active" onclick="switchTab('visao-geral')">Visão Geral</button>
+			<button class="dash-tab" onclick="switchTab('avisos')">Avisos</button>
+		</div>
+
+		<!-- ───────────────────────────────────────────────
+		     ABA: Visão Geral
+		─────────────────────────────────────────────── -->
+		<div id="panel-visao-geral" class="dash-panel active">
+
+			<div class="card">
+				<div class="card-title">Igreja</div>
+				<div style="margin-bottom: 8px;"><strong>Nome:</strong> <span id="church-name">—</span></div>
+				<div style="margin-bottom: 8px;"><strong>Código:</strong> <span id="church-code">—</span></div>
+			</div>
+
+			<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+				<div class="card">
+					<div class="card-title">Ministérios</div>
+					<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-ministerios">0</div>
+				</div>
+				<div class="card">
+					<div class="card-title">Equipes</div>
+					<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-equipes">0</div>
+				</div>
+				<div class="card">
+					<div class="card-title">Locais</div>
+					<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-locais">0</div>
+				</div>
+				<div class="card">
+					<div class="card-title">Músicas</div>
+					<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-musicas">0</div>
+				</div>
+				<div class="card">
+					<div class="card-title">Escalas</div>
+					<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-escalas">0</div>
+				</div>
+				<div class="card">
+					<div class="card-title">Membros</div>
+					<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-membros">0</div>
+				</div>
+			</div>
+
+			<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+				<div class="card">
+					<div class="card-title">Ações Rápidas</div>
+					<div style="display: flex; flex-direction: column; gap: 8px;">
+						<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/membros.html'">Gerenciar Membros</button>
+						<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/ministerios.html'">Gerenciar Ministérios</button>
+						<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/equipes.html'">Gerenciar Equipes</button>
+						<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/locais.html'">Gerenciar Locais</button>
+						<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/musicas.html'">Gerenciar Músicas</button>
+						<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/escalas.html'">Gerenciar Escalas</button>
+						<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/funcoes.html'">Gerenciar Funções</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ───────────────────────────────────────────────
+		     ABA: Avisos
+		─────────────────────────────────────────────── -->
+		<div id="panel-avisos" class="dash-panel">
+
+			<div id="avisos-alert"></div>
+
+			<div class="avisos-toolbar">
+				<span style="font-size: 14px; color: var(--c5);" id="avisos-count">— avisos</span>
+				<button class="btn btn-primary btn-sm" onclick="openAvisoModal()">+ Novo Aviso</button>
+			</div>
+
+			<div id="avisos-grid" class="avisos-grid">
+				<p style="color: var(--c5); font-size: 14px;">Carregando...</p>
+			</div>
+		</div>
+	</div>
+
+	<!-- ───────────────────────────────────────────────
+	     Modal: Criar / Editar Aviso
+	─────────────────────────────────────────────── -->
+	<div id="aviso-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; overflow-y:auto;">
+		<div style="background:var(--c6); border-radius:8px; padding:24px; max-width:520px; margin:60px auto; box-shadow:0 4px 6px rgba(0,0,0,0.15);">
+			<h3 id="aviso-modal-title" style="margin-top:0; margin-bottom:20px;">Novo Aviso</h3>
+			<div id="aviso-modal-alert"></div>
+			<form id="aviso-form">
+				<input type="hidden" id="aviso-id">
+				<div class="form-group">
+					<label>Nome *</label>
+					<input type="text" id="aviso-nome" required placeholder="Ex: Ensaio Geral">
+				</div>
+				<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+					<div class="form-group">
+						<label>Data *</label>
+						<input type="date" id="aviso-data" required>
+					</div>
+					<div class="form-group">
+						<label>Horário *</label>
+						<input type="time" id="aviso-horario" required>
+					</div>
+				</div>
+				<div class="form-group">
+					<label>Descrição</label>
+					<textarea id="aviso-descricao" rows="3" placeholder="Detalhes do aviso..."></textarea>
+				</div>
+				<div style="display:flex; gap:8px; margin-top:20px;">
+					<button type="button" class="btn btn-secondary" onclick="closeAvisoModal()">Cancelar</button>
+					<button type="submit" class="btn btn-primary" id="aviso-submit-btn">Salvar</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<script src="/admin/js/app.js"></script>
+	<script>
+		/* ═══════════════════════════════════════════════
+		   Estado global
+		═══════════════════════════════════════════════ */
+		let avisos = [];
+		let avisoEditId = null;
+		let avisosCarregados = false;
+
+		/* ═══════════════════════════════════════════════
+		   Abas
+		═══════════════════════════════════════════════ */
+		function switchTab(tab) {
+			// Painel
+			document.querySelectorAll(".dash-panel").forEach(p => p.classList.remove("active"));
+			document.getElementById("panel-" + tab).classList.add("active");
+			// Botão de aba
+			document.querySelectorAll(".dash-tab").forEach((btn, i) => {
+				const tabs = ["visao-geral", "avisos"];
+				btn.classList.toggle("active", tabs[i] === tab);
+			});
+			// Carrega avisos na primeira vez que a aba é aberta
+			if (tab === "avisos" && !avisosCarregados) {
+				loadAvisos();
+			}
+		}
+
+		/* ═══════════════════════════════════════════════
+		   Dashboard (aba Visão Geral)
+		═══════════════════════════════════════════════ */
+		async function loadDashboard() {
+			try {
+				const data = await window.saintScaleAdmin.api.getDashboard();
+				document.getElementById("user-name").textContent = data.eu.nome || "—";
+				document.getElementById("church-name").textContent = data.igreja.nome || "—";
+				document.getElementById("church-code").textContent = data.igreja.codigo || "—";
+				document.getElementById("count-ministerios").textContent = data.ministerios?.length || 0;
+				document.getElementById("count-equipes").textContent = data.equipes?.length || 0;
+				document.getElementById("count-locais").textContent = data.locais?.length || 0;
+				document.getElementById("count-musicas").textContent = data.musicas?.length || 0;
+				document.getElementById("count-escalas").textContent = data.escalas?.length || 0;
+				document.getElementById("count-membros").textContent = data.membros?.length || 0;
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("alert-container", err.message, "error");
+			}
+		}
+
+		/* ═══════════════════════════════════════════════
+		   Avisos — listagem
+		═══════════════════════════════════════════════ */
+		async function loadAvisos() {
+			const grid = document.getElementById("avisos-grid");
+			grid.innerHTML = '<p style="color:var(--c5); font-size:14px;">Carregando...</p>';
+			try {
+				avisos = await window.saintScaleAdmin.api.listarLembretes();
+				avisosCarregados = true;
+				renderAvisos();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("avisos-alert", err.message, "error");
+				grid.innerHTML = '<p style="color:var(--c5); font-size:14px;">Erro ao carregar avisos.</p>';
+			}
+		}
+
+		function renderAvisos() {
+			const grid = document.getElementById("avisos-grid");
+			const countEl = document.getElementById("avisos-count");
+			countEl.textContent = avisos.length === 1 ? "1 aviso" : `${avisos.length} avisos`;
+
+			if (avisos.length === 0) {
+				grid.innerHTML = `
+					<div class="avisos-empty" style="grid-column:1/-1;">
+						<div class="avisos-empty-icon">📋</div>
+						<div style="font-weight:600; margin-bottom:4px;">Nenhum aviso cadastrado</div>
+						<div style="font-size:13px;">Clique em <strong>+ Novo Aviso</strong> para criar o primeiro.</div>
+					</div>`;
+				return;
+			}
+
+			grid.innerHTML = avisos.map(a => `
+				<div class="aviso-card">
+					<div class="aviso-card-title">${window.saintScaleAdmin.escapeHtml(a.name)}</div>
+					<div class="aviso-card-meta">📅 ${window.saintScaleAdmin.escapeHtml(a.date || "—")} &nbsp;⏰ ${window.saintScaleAdmin.escapeHtml(a.tempo || "—")}</div>
+					${a.description ? `<div class="aviso-card-desc">${window.saintScaleAdmin.escapeHtml(a.description)}</div>` : ""}
+					${(a.functions && a.functions.length > 0) ? `
+						<div class="aviso-card-funcoes">
+							${a.functions.map(f => `<span class="aviso-card-funcao-tag">${window.saintScaleAdmin.escapeHtml(f)}</span>`).join("")}
+						</div>` : ""}
+					<div class="aviso-card-actions">
+						<button class="btn btn-outline btn-sm" onclick="openAvisoModal(${a.id_lembrete})">Editar</button>
+						<button class="btn btn-danger btn-sm" onclick="deleteAviso(${a.id_lembrete})">Excluir</button>
+					</div>
+				</div>
+			`).join("");
+		}
+
+		/* ═══════════════════════════════════════════════
+		   Avisos — modal criar / editar
+		═══════════════════════════════════════════════ */
+		function openAvisoModal(id) {
+			avisoEditId = id ?? null;
+			window.saintScaleAdmin.clearAlert("aviso-modal-alert");
+			document.getElementById("aviso-form").reset();
+			document.getElementById("aviso-id").value = "";
+
+			if (avisoEditId) {
+				const a = avisos.find(x => x.id_lembrete === String(avisoEditId));
+				if (!a) return;
+				document.getElementById("aviso-modal-title").textContent = "Editar Aviso";
+				document.getElementById("aviso-submit-btn").textContent = "Salvar alterações";
+				document.getElementById("aviso-id").value = a.id_lembrete;
+				document.getElementById("aviso-nome").value = a.name;
+				// data vem formatada "DD/MM/YYYY" do backend; precisa converter para "YYYY-MM-DD"
+				document.getElementById("aviso-data").value = parseDateForInput(a.date);
+				document.getElementById("aviso-horario").value = a.tempo || "";
+				document.getElementById("aviso-descricao").value = a.description || "";
+			} else {
+				document.getElementById("aviso-modal-title").textContent = "Novo Aviso";
+				document.getElementById("aviso-submit-btn").textContent = "Salvar";
+			}
+
+			document.getElementById("aviso-modal").style.display = "block";
+		}
+
+		function closeAvisoModal() {
+			document.getElementById("aviso-modal").style.display = "none";
+		}
+
+		// Converte "DD/MM/YYYY" → "YYYY-MM-DD" para popular input[type=date]
+		function parseDateForInput(dateStr) {
+			if (!dateStr) return "";
+			const parts = dateStr.split("/");
+			if (parts.length !== 3) return dateStr;
+			return `${parts[2]}-${parts[1]}-${parts[0]}`;
+		}
+
+		async function saveAviso(e) {
+			e.preventDefault();
+			const submitBtn = document.getElementById("aviso-submit-btn");
+			const originalText = submitBtn.textContent;
+			submitBtn.disabled = true;
+			submitBtn.textContent = "Salvando...";
+
+			const payload = {
+				nome:  document.getElementById("aviso-nome").value.trim(),
+				data:  document.getElementById("aviso-data").value,
+				tempo: document.getElementById("aviso-horario").value,
+			};
+			const descricao = document.getElementById("aviso-descricao").value.trim();
+			if (descricao) payload.descricao = descricao;
+
+			try {
+				if (avisoEditId) {
+					await window.saintScaleAdmin.api.atualizarLembrete(avisoEditId, payload);
+				} else {
+					await window.saintScaleAdmin.api.criarLembrete(payload);
+				}
+				closeAvisoModal();
+				await loadAvisos();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("aviso-modal-alert", err.message, "error");
+			} finally {
+				submitBtn.disabled = false;
+				submitBtn.textContent = originalText;
+			}
+		}
+
+		/* ═══════════════════════════════════════════════
+		   Avisos — excluir
+		═══════════════════════════════════════════════ */
+		async function deleteAviso(id) {
+			if (!confirm("Excluir este aviso?")) return;
+			try {
+				await window.saintScaleAdmin.api.removerLembrete(id);
+				await loadAvisos();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("avisos-alert", err.message, "error");
+			}
+		}
+
+		/* ═══════════════════════════════════════════════
+		   Fechar modal ao clicar fora
+		═══════════════════════════════════════════════ */
+		window.onclick = (e) => {
+			if (e.target === document.getElementById("aviso-modal")) closeAvisoModal();
+		};
+
+		document.getElementById("aviso-form").addEventListener("submit", saveAviso);
+
+		/* ═══════════════════════════════════════════════
+		   Boot
+		═══════════════════════════════════════════════ */
+		if (!window.saintScaleAdmin.isAuthenticated()) {
+			window.location.href = "/admin/index.html";
+		} else {
+			loadDashboard();
+		}
+	</script>
+</body>
+</html>

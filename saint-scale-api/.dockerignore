@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist_temp/
+.git/
+tests/
+server.log
+server_dev.log
+resp.json
+*.md
+.env
+.env.*
+!.env.example

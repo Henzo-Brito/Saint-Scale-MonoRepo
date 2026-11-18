@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Dashboard - SaintScale Admin</title>
+	<link rel="stylesheet" href="/admin/css/style.css">
+</head>
+<body>
+	<header class="header">
+		<div class="header-content">
+			<h1>Painel Administrativo</h1>
+			<div class="nav-actions">
+				<span class="user-info">
+					<span id="user-name" class="user-badge">—</span>
+				</span>
+				<button class="btn btn-secondary btn-sm" onclick="window.saintScaleAdmin.logout()">Sair</button>
+			</div>
+		</div>
+	</header>
+
+	<div class="container">
+		<div id="alert-container"></div>
+
+		<div class="card">
+			<div class="card-title">Igreja</div>
+			<div style="margin-bottom: 8px;"><strong>Nome:</strong> <span id="church-name">—</span></div>
+			<div style="margin-bottom: 8px;"><strong>Código:</strong> <span id="church-code">—</span></div>
+		</div>
+
+		<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+			<div class="card">
+				<div class="card-title">Ministérios</div>
+				<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-ministerios">0</div>
+			</div>
+			<div class="card">
+				<div class="card-title">Equipes</div>
+				<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-equipes">0</div>
+			</div>
+			<div class="card">
+				<div class="card-title">Locais</div>
+				<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-locais">0</div>
+			</div>
+			<div class="card">
+				<div class="card-title">Músicas</div>
+				<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-musicas">0</div>
+			</div>
+			<div class="card">
+				<div class="card-title">Escalas</div>
+				<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-escalas">0</div>
+			</div>
+			<div class="card">
+				<div class="card-title">Membros</div>
+				<div style="font-size: 32px; font-weight: 700; color: var(--c1);" id="count-membros">0</div>
+			</div>
+		</div>
+
+		<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+			<div class="card">
+				<div class="card-title">Ações Rápidas</div>
+				<div style="display: flex; flex-direction: column; gap: 8px;">
+					<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/membros.html'">Gerenciar Membros</button>
+					<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/ministerios.html'">Gerenciar Ministérios</button>
+					<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/equipes.html'">Gerenciar Equipes</button>
+					<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/locais.html'">Gerenciar Locais</button>
+					<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/musicas.html'">Gerenciar Músicas</button>
+					<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/escalas.html'">Gerenciar Escalas</button>
+					<button class="btn btn-primary" style="width: 100%;" onclick="location.href='/admin/funcoes.html'">Gerenciar Funções</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script src="/admin/js/app.js"></script>
+	<script>
+		async function loadDashboard() {
+			try {
+				const data = await window.saintScaleAdmin.api.getDashboard();
+				document.getElementById("user-name").textContent = data.eu.nome || "—";
+				document.getElementById("church-name").textContent = data.igreja.nome || "—";
+				document.getElementById("church-code").textContent = data.igreja.codigo || "—";
+
+				document.getElementById("count-ministerios").textContent = data.ministerios?.length || 0;
+				document.getElementById("count-equipes").textContent = data.equipes?.length || 0;
+				document.getElementById("count-locais").textContent = data.locais?.length || 0;
+				document.getElementById("count-musicas").textContent = data.musicas?.length || 0;
+				document.getElementById("count-escalas").textContent = data.escalas?.length || 0;
+				document.getElementById("count-membros").textContent = data.membros?.length || 0;
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("alert-container", err.message, "error");
+			}
+		}
+
+		if (!window.saintScaleAdmin.isAuthenticated()) {
+			window.location.href = "/admin/index.html";
+		} else {
+			loadDashboard();
+		}
+	</script>
+</body>
+</html>

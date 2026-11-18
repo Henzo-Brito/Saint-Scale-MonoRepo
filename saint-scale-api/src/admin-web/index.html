@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>SaintScale - Login Administrativo</title>
+	<link rel="stylesheet" href="/admin/css/style.css">
+</head>
+<body>
+	<div class="login-container">
+		<div class="login-card">
+			<h2>Painel Administrativo</h2>
+			<p>Faça login para acessar o gerenciamento da igreja.</p>
+			<div id="alert-container"></div>
+			<form id="login-form">
+				<div class="form-group">
+					<label for="email">E-mail</label>
+					<input type="email" id="email" placeholder="admin@igreja.com" required>
+				</div>
+				<div class="form-group">
+					<label for="password">Senha</label>
+					<input type="password" id="password" placeholder="Sua senha" required>
+				</div>
+				<button type="submit" class="btn btn-primary" style="width: 100%;">Entrar</button>
+			</form>
+			<p style="text-align: center; margin-top: 16px; font-size: 14px; color: var(--c5);">
+				Voltar para o <a href="/">portal do membro</a>
+			</p>
+		</div>
+	</div>
+	<script src="/admin/js/app.js"></script>
+	<script>
+		document.getElementById("login-form").addEventListener("submit", async (e) => {
+			e.preventDefault();
+			const email = document.getElementById("email").value;
+			const password = document.getElementById("password").value;
+			const alertContainer = document.getElementById("alert-container");
+
+			try {
+				const data = await window.saintScaleAdmin.auth.login({ email, password });
+				if (data.accessToken) {
+					window.saintScaleAdmin.setToken(data.accessToken);
+					window.location.href = "/admin/dashboard.html";
+				} else {
+					window.saintScaleAdmin.showAlert("alert-container", "Token não recebido do servidor.", "error");
+				}
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("alert-container", err.message, "error");
+			}
+		});
+	</script>
+</body>
+</html>

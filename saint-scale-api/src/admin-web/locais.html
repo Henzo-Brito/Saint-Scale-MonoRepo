@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Locais - SaintScale Admin</title>
+	<link rel="stylesheet" href="/admin/css/style.css">
+</head>
+<body>
+	<header class="header">
+		<div class="header-content">
+			<h1>Locais</h1>
+			<div class="nav-actions">
+				<button class="btn btn-secondary btn-sm" onclick="location.href='/admin/dashboard.html'">Voltar</button>
+				<button class="btn btn-primary btn-sm" onclick="openCreateModal()">Novo Local</button>
+				<button class="btn btn-secondary btn-sm" onclick="window.saintScaleAdmin.logout()">Sair</button>
+			</div>
+		</div>
+	</header>
+
+	<div class="container">
+		<div id="alert-container"></div>
+
+		<div class="card">
+			<div class="card-title">Lista de Locais</div>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Nome</th>
+						<th>Endereço</th>
+						<th>Ações</th>
+					</tr>
+				</thead>
+				<tbody id="locais-table-body">
+					<tr><td colspan="3" class="empty-state">Carregando...</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<div id="local-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+		<div style="background: var(--c6); border-radius: 8px; padding: 24px; max-width: 500px; margin: 60px auto; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
+			<h3 id="modal-title" style="margin-top: 0;">Novo Local</h3>
+			<div id="modal-alert"></div>
+			<form id="local-form">
+				<input type="hidden" id="local-id">
+				<div class="form-group">
+					<label>Nome</label>
+					<input type="text" id="local-name" required>
+				</div>
+				<div class="form-group">
+					<label>Endereço</label>
+					<input type="text" id="local-endereco">
+				</div>
+				<div style="display: flex; gap: 8px; margin-top: 16px;">
+					<button type="button" class="btn btn-secondary" onclick="closeLocalModal()">Cancelar</button>
+					<button type="submit" class="btn btn-primary">Salvar</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<script src="/admin/js/app.js"></script>
+	<script>
+		let locais = [];
+		let editId = null;
+
+		async function loadLocais() {
+			try {
+				locais = await window.saintScaleAdmin.api.listarLocais();
+				renderLocais();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("alert-container", err.message, "error");
+				document.getElementById("locais-table-body").innerHTML = '<tr><td colspan="3" class="empty-state">Erro ao carregar locais</td></tr>';
+			}
+		}
+
+		function renderLocais() {
+			const tbody = document.getElementById("locais-table-body");
+			if (locais.length === 0) {
+				tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Nenhum local cadastrado</td></tr>';
+				return;
+			}
+			tbody.innerHTML = locais.map(l => `
+				<tr>
+					<td>${window.saintScaleAdmin.escapeHtml(l.nome)}</td>
+					<td>${window.saintScaleAdmin.escapeHtml(l.endereco) || "—"}</td>
+					<td>
+						<div class="table-actions">
+							<button class="btn btn-outline btn-sm" onclick="openEditModal(${l.id})">Editar</button>
+							<button class="btn btn-danger btn-sm" onclick="deleteLocal(${l.id})">Excluir</button>
+						</div>
+					</td>
+				</tr>
+			`).join("");
+		}
+
+		function openCreateModal() {
+			editId = null;
+			document.getElementById("modal-title").textContent = "Novo Local";
+			document.getElementById("local-form").reset();
+			document.getElementById("local-id").value = "";
+			document.getElementById("local-modal").style.display = "block";
+			window.saintScaleAdmin.clearAlert("modal-alert");
+		}
+
+		function openEditModal(id) {
+			const l = locais.find(x => x.id === id);
+			if (!l) return;
+			editId = id;
+			document.getElementById("modal-title").textContent = "Editar Local";
+			document.getElementById("local-id").value = l.id;
+			document.getElementById("local-name").value = l.nome;
+			document.getElementById("local-endereco").value = l.endereco || "";
+			document.getElementById("local-modal").style.display = "block";
+			window.saintScaleAdmin.clearAlert("modal-alert");
+		}
+
+		function closeLocalModal() {
+			document.getElementById("local-modal").style.display = "none";
+		}
+
+		async function saveLocal(e) {
+			e.preventDefault();
+			const data = {
+				nome: document.getElementById("local-name").value,
+			};
+			const endereco = document.getElementById("local-endereco").value.trim();
+			if (endereco) data.endereco = endereco;
+
+			try {
+				if (editId) {
+					await window.saintScaleAdmin.api.atualizarLocal(editId, data);
+				} else {
+					await window.saintScaleAdmin.api.criarLocal(data);
+				}
+				closeLocalModal();
+				loadLocais();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("modal-alert", err.message, "error");
+			}
+		}
+
+		async function deleteLocal(id) {
+			if (!confirm("Tem certeza que deseja excluir este local?")) return;
+			try {
+				await window.saintScaleAdmin.api.excluirLocal(id);
+				loadLocais();
+			} catch (err) {
+				window.saintScaleAdmin.showAlert("alert-container", err.message, "error");
+			}
+		}
+
+		document.getElementById("local-form").addEventListener("submit", saveLocal);
+		window.onclick = (e) => {
+			if (e.target === document.getElementById("local-modal")) closeLocalModal();
+		};
+
+		if (!window.saintScaleAdmin.isAuthenticated()) {
+			window.location.href = "/admin/index.html";
+		} else {
+			loadLocais();
+		}
+	</script>
+</body>
+</html>
