@@ -73,7 +73,7 @@ PORT=3000
 JWT_SECRET=Henzo_Esteve_Aqui
 CODIGO_ENTRADA_SECRET=saint-scale-codigo-entrada-secreto
 NODE_ENV=development
-CORS_ORIGIN=http://localhost:8081
+CORS_ORIGIN=http://localhost:8082
 
 DB_HOST=127.0.0.1
 DB_PORT=3308
@@ -143,7 +143,7 @@ cd saint-scale
 npm run web
 ```
 
-Acesse: [http://localhost:8081](http://localhost:8081)
+Acesse: [http://localhost:8082](http://localhost:8082)
 
 ---
 
@@ -170,7 +170,7 @@ Este script inicia o MySQL, executa as migrations e inicia o backend.
 | Serviço | Porta |
 |---------|-------|
 | Backend (API) | 3000 |
-| Frontend (Expo Web) | 8081 |
+| Frontend (Expo Web) | 8082 |
 | MySQL | 3308 |
 
 ---
@@ -227,7 +227,7 @@ Verifique as variáveis `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME
 ### "EXPO_PUBLIC_API_URL não está configurada"
 Verifique se o arquivo `saint-scale/.env` existe com `EXPO_PUBLIC_API_URL=http://localhost:3000/api`.
 
-### Porta 3000 ou 8081 ocupada
+### Porta 3000 ou 8082 ocupada
 Mude `PORT=3001` no `saint-scale-api/.env` e atualize `EXPO_PUBLIC_API_URL` no `saint-scale/.env`.
 
 ---

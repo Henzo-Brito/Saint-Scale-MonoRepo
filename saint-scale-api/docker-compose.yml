@@ -1,34 +1,44 @@
 services:
-  postgres:
-    image: postgres:17
-    container_name: saintscale-postgres
+  mysql:
+    image: mysql:8.4
+    container_name: saintscale-mysql
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: saintscale_dev
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: saintscale_dev
+      MYSQL_USER: saintscale
+      MYSQL_PASSWORD: saintscale123
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "saintscale", "-psaintscale123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   api:
     build: .
     container_name: saintscale-api
     restart: unless-stopped
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/saintscale_dev
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET:-Henzo_Esteve_Aqui}
+      CODIGO_ENTRADA_SECRET: ${CODIGO_ENTRADA_SECRET:-saint-scale-codigo-entrada-secreto}
       NODE_ENV: production
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: saintscale
+      DB_PASSWORD: saintscale123
+      DB_NAME: saintscale_dev
     ports:
       - "3000:3000"
-    env_file:
-      - .env
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000/admin/login').then(() => process.exit(0)).catch(() => process.exit(1))"]
       interval: 30s
@@ -37,4 +47,4 @@ services:
       start_period: 10s
 
 volumes:
-  postgres_data:
+  mysql_data:

@@ -142,7 +142,7 @@ src/types/
 - argon2id — hash de senhas
 - pg 8.23 — driver PostgreSQL puro (pool de conexões)
 - stoker — helpers de status HTTP e middlewares
-- CORS configurável via variável `CORS_ORIGIN` (padrão: `http://localhost:8081`)
+- CORS configurável via variável `CORS_ORIGIN` (padrão: `http://localhost:8082`)
 
 ### Estrutura de rotas
 
